@@ -18,7 +18,9 @@ class PgSubscriptionStream extends Transform {
 		}} = this.options
 		const lsn = typeof(startPos) === 'bigint' ? startPos.toString(16).padStart(9, '0').replace(/.{8}$/, '\/$&') : startPos
 		const query = `START_REPLICATION SLOT ${slotName} LOGICAL ${lsn} (${Object.entries(pluginOptions).map(([k, v]) => `"${k}" '${v}'`).join(',')})`
-		this.copyBoth = new both(query)
+		this.copyBoth = new both(query, {
+			alignOnCopyDataFrame: true
+		})
 		this.copyBoth.pipe(this)
 		this.copyBoth.on('error', err => this.emit('error', err))
 		this.interval = setInterval(() => {
