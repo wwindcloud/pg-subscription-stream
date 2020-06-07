@@ -25,6 +25,6 @@
     "url": "git://github.com/wwindcloud/pg-subscription-stream.git"
   },
   "dependencies": {
-    "pg-copy-streams": "git+https://github.com/brianc/node-pg-copy-streams.git"
+    "pg-copy-streams": "^5.1.0"
   }
 }
