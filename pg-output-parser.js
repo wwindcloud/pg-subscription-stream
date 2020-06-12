@@ -60,7 +60,7 @@ const createParsers = ({typeParsers, includeTransactionLsn, includeXids, include
 			const identifier = _.readUInt8(1 + 4)
 			if (identifier in tuples && relations.has(id)) {
 				const {schema, table, columns} = relations.get(id)
-				const [v, counter] = extractTuples.call(_, 0 + 4 + 1)
+				const [v, counter] = extractTuples.call(_, 1 + 4 + 1)
 				const row = Object.fromEntries(Object.entries(columns)
 					.filter(([k, {flags}]) => identifier !== 0x4b || flags === 1)
 					.map(([k, {typeParser}], i) => [k, parseColumn.call(typeParser, v[i])]))
