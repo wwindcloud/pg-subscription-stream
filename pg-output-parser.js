@@ -133,7 +133,7 @@ const createParsers = ({typeParsers, includeTransactionLsn, includeXids, include
 			} else
 				throw new Error(`Unknown Update Message Format: ${identifier.toString(16)}`)
 		},
-		0x59: () => { // Type
+		0x59: _ => { // Type
 			const id = _.readUInt32BE(1)
 			const schema = extractString.call(_, 1 + 4)
 			const name = extractString.call(_, 1 + 4 + schema.length + 1)
