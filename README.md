@@ -45,7 +45,7 @@ const client = new Client({
   
   // A Parser to decode the output from server side logical decoding plugin
   const parser = new PgOutputParser({
-    typeParers: types,
+    typeParsers: types,
     includeLsn: true
   })
   
