@@ -12,10 +12,20 @@ class PgSubscriptionStream extends Transform {
 		this.flush_written_lsn = invalid_lsn
 		this.last_feedback_time = now()
 
-		const {slotName, feedbackInterval = 20000, startPos = 0n, pluginOptions = {
-			proto_version: 1,
-			publication_names: slotName
-		}} = this.options
+		const {
+			slotName,
+			feedbackInterval = 20000,
+			startPos = 0n,
+			pluginOptions = {
+				proto_version: 1,
+				publication_names: slotName
+			},
+			getFeedbackLsn = (output_written_lsn, flush_written_lsn) => ({
+				output_written_lsn: output_written_lsn,
+				flush_written_lsn: flush_written_lsn,
+			}),
+		} = this.options
+		this.getFeedbackLsn = getFeedbackLsn
 		const lsn = typeof(startPos) === 'bigint' ? startPos.toString(16).padStart(9, '0').replace(/.{8}$/, '\/$&') : startPos
 		const query = `START_REPLICATION SLOT ${slotName} LOGICAL ${lsn} (${Object.entries(pluginOptions).map(([k, v]) => `"${k}" '${v}'`).join(',')})`
 		this.copyBoth = new both(query, {
@@ -33,7 +43,12 @@ class PgSubscriptionStream extends Transform {
 	}
 
 	sendFeedback(force) {
-		if (this.flush_written_lsn === invalid_lsn) return
+		const {
+			output_written_lsn,
+			flush_written_lsn,
+		} = this.getFeedbackLsn(this.output_written_lsn, this.flush_written_lsn)
+
+		if (flush_written_lsn === invalid_lsn) return
 
 		const current_time = now()
 		const {feedbackInterval = 20000} = this.options
@@ -41,8 +56,8 @@ class PgSubscriptionStream extends Transform {
 			this.last_feedback_time = current_time
 			const response = new DataView(new ArrayBuffer(1 + 8 + 8 + 8 + 8 + 1))
 			response.setUint8(0, 'r'.charCodeAt(0))
-			response.setBigUint64(1, this.output_written_lsn)
-			response.setBigUint64(1 + 8, this.flush_written_lsn)
+			response.setBigUint64(1, output_written_lsn)
+			response.setBigUint64(1 + 8, flush_written_lsn)
 			response.setBigUint64(1 + 8 + 8, invalid_lsn)
 			response.setBigUint64(1 + 8 + 8 + 8, current_time)
 			response.setUint8(1 + 8 + 8 + 8 + 8, 0)
