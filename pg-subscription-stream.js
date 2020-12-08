@@ -33,6 +33,8 @@ class PgSubscriptionStream extends Transform {
 	}
 
 	sendFeedback(force) {
+		if (this.flush_written_lsn === invalid_lsn) return
+
 		const current_time = now()
 		const {feedbackInterval = 20000} = this.options
 		if (force || current_time - this.last_feedback_time > feedbackInterval) {
