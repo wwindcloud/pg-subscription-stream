@@ -62,7 +62,9 @@ class PgSubscriptionStream extends Transform {
 			const lsn = chunk.readBigUInt64BE(1)
 			const shouldRespond = chunk.readInt8(1 + 8 + 8)
 			this.output_written_lsn = this.output_written_lsn > lsn ? this.output_written_lsn : lsn
-			this.flush_written_lsn = autoConfirmLSN ? this.output_written_lsn : this.flush_written_lsn
+			if (autoConfirmLSN || this.flush_written_lsn === invalid_lsn) {
+				this.flush_written_lsn = this.output_written_lsn;
+			}
 			this.sendFeedback(shouldRespond > 0)
 		} else {
 			callback(new Error(`Unknown Message: ${chunk}`))
