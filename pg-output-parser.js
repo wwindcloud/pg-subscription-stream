@@ -64,7 +64,7 @@ const createParsers = ({typeParsers, includeTransactionLsn, includeXids, include
 				const row = Object.fromEntries(Object.entries(columns)
 					.filter(([k, {flags}]) => identifier !== 0x4b || flags === 1)
 					.map(([k, {typeParser}], i) => [k, parseColumn.call(typeParser, v[i])]))
-				return [{kind: 'DELETE', schema, table, [tuples[identifier]]: row}, counter]
+				return [{kind: 'DELETE', id, schema, table, [tuples[identifier]]: row}, counter]
 			} else
 				throw new Error(`Unknown Update Message Format: ${identifier.toString(16)}`)
 		},
@@ -76,7 +76,7 @@ const createParsers = ({typeParsers, includeTransactionLsn, includeXids, include
 				const [v, counter] = extractTuples.call(_, 1 + 4 + 1)
 				const row = Object.fromEntries(Object.entries(columns)
 					.map(([k, {typeParser}], i) => [k, parseColumn.call(typeParser, v[i])]))
-				return [{kind: 'INSERT', schema, table, [tuples[identifier]]: row}, counter]
+				return [{kind: 'INSERT', id, schema, table, [tuples[identifier]]: row}, counter]
 			} else
 				throw new Error(`Unknown Insert Message Format: ${identifier.toString(16)}`)
 		},
@@ -107,7 +107,7 @@ const createParsers = ({typeParsers, includeTransactionLsn, includeXids, include
 			const rels = _.readUInt32BE(1)
 			const option = _.readUInt8(1 + 4)
 			const [id, c] = Array.from(new Array(rels)).reduce(([r, counter]) => [[...r, _.readUInt32BE(counter)], counter + 4], [[], 1 + 4 + 1])
-			return [{kind: 'TRUNCATE', option, relations: id.map(_ => relations.get(_)).map(({schema, table}) => ({schema, table}))}, c]
+			return [{kind: 'TRUNCATE', option, relations: id.map(_ => relations.get(_)).map(({id, schema, table}) => ({id, schema, table}))}, c]
 		},
 		0x55: _ => { // Update
 			const kind = 'UPDATE'
@@ -126,10 +126,10 @@ const createParsers = ({typeParsers, includeTransactionLsn, includeXids, include
 					const [n, c] = extractTuples.call(_, counter + 1)
 					const nrow = Object.fromEntries(Object.entries(columns)
 						.map(([k, {typeParser}], i) => [k, parseColumn.call(typeParser, n[i])]))
-					return [{kind, schema, table, [tuples[identifier]]: row, [tuples[nn]]: nrow}, c]
+					return [{kind, id, schema, table, [tuples[identifier]]: row, [tuples[nn]]: nrow}, c]
 				}
 				else
-					return [{kind, schema, table, [tuples[identifier]]: row}, counter]
+					return [{kind, id, schema, table, [tuples[identifier]]: row}, counter]
 			} else
 				throw new Error(`Unknown Update Message Format: ${identifier.toString(16)}`)
 		},
